@@ -13,20 +13,15 @@ import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
 import ListItemText from "@material-ui/core/ListItemText";
 import Checkbox from "@material-ui/core/Checkbox";
 import DeleteIcon from "@material-ui/icons/Delete";
-import InputLabel from "@material-ui/core/InputLabel";
-import MenuItem from "@material-ui/core/MenuItem";
-import FormControl from "@material-ui/core/FormControl";
-import Select from "@material-ui/core/Select";
 import { auth, db } from "./firebase";
 
 //58:04
 
 export function App(props) {
   const [user, setUser] = useState(null);
-  const [task, setTask] = useState([]);
   const [new_task, setNewTask] = useState("");
-  const [priority, setPriority] = React.useState("");
   const [incomplete, setIncomplete] = useState([]);
+  const [complete, setComplete] = useState([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(u => {
@@ -48,24 +43,32 @@ export function App(props) {
         .doc(user.uid)
         .collection("tasks")
         .onSnapshot(snapshot => {
-          const updated_tasks = [];
+          const incomplete_tasks = [];
+          const complete_tasks = [];
           snapshot.forEach(doc => {
             const data = doc.data();
-            updated_tasks.push({
-              text: data.text,
-              checked: data.checked,
-              id: doc.id
-            });
+            if (data.checked === false) {
+              incomplete_tasks.push({
+                text: data.text,
+                checked: data.checked,
+                id: doc.id,
+                priority: ""
+              });
+            } else {
+              complete_tasks.push({
+                text: data.text,
+                checked: data.checked,
+                id: doc.id,
+                priority: ""
+              });
+            }
           });
-          setTask(updated_tasks);
+          setIncomplete(incomplete_tasks);
+          setComplete(complete_tasks);
         });
     }
     return unsubscribe;
-  }, [user, task, incomplete]);
-
-  const handleChange = event => {
-    setPriority(event.target.value);
-  };
+  }, [user, incomplete, complete]);
 
   const handleSignOut = () => {
     auth
@@ -147,13 +150,10 @@ export function App(props) {
             </Button>
           </div>
 
-          <div>Incomplete Tasks</div>
-
-          <div>Completed Tasks</div>
-
           <div>
+            Incomplete Tasks
             <List>
-              {task.map(value => {
+              {incomplete.map(value => {
                 const labelid = `checkbox-list-label-${value}`;
                 return (
                   <ListItem key={value.id}>
@@ -169,19 +169,38 @@ export function App(props) {
                     </ListItemIcon>
                     <ListItemText id={labelid} primary={value.text} />
                     <ListItemSecondaryAction>
-                      <FormControl>
-                        <InputLabel>Priority</InputLabel>
-                        <Select
-                          labelid="demo-simple-select-label"
-                          id="demo-simple-select"
-                          value={priority}
-                          onChange={handleChange}
-                        >
-                          <MenuItem value={1}>Low</MenuItem>
-                          <MenuItem value={2}>Medium</MenuItem>
-                          <MenuItem value={3}>High</MenuItem>
-                        </Select>
-                      </FormControl>
+                      <IconButton
+                        onClick={() => {
+                          handleDeleteTask(value.id);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                );
+              })}
+            </List>
+          </div>
+          <div>
+            Completed Tasks
+            <List>
+              {complete.map(value => {
+                const labelid = `checkbox-list-label-${value}`;
+                return (
+                  <ListItem key={value.id}>
+                    <ListItemIcon>
+                      <Checkbox
+                        checked={value.checked}
+                        onChange={(e, checked) => {
+                          handleCheckTask(checked, value.id);
+                        }}
+                        // checked={checked.indexOf(value) !== -1}
+                        inputProps={{ "aria-labelledby": labelid }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText id={labelid} primary={value.text} />
+                    <ListItemSecondaryAction>
                       <IconButton
                         onClick={() => {
                           handleDeleteTask(value.id);
