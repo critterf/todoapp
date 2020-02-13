@@ -19,9 +19,8 @@ import { auth, db } from "./firebase";
 
 export function App(props) {
   const [user, setUser] = useState(null);
+  const [tasks, setTask] = useState([]);
   const [new_task, setNewTask] = useState("");
-  const [incomplete, setIncomplete] = useState([]);
-  const [complete, setComplete] = useState([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(u => {
@@ -43,32 +42,21 @@ export function App(props) {
         .doc(user.uid)
         .collection("tasks")
         .onSnapshot(snapshot => {
-          const incomplete_tasks = [];
-          const complete_tasks = [];
+          const updated_tasks = [];
           snapshot.forEach(doc => {
             const data = doc.data();
-            if (data.checked === false) {
-              incomplete_tasks.push({
-                text: data.text,
-                checked: data.checked,
-                id: doc.id,
-                priority: ""
-              });
-            } else {
-              complete_tasks.push({
-                text: data.text,
-                checked: data.checked,
-                id: doc.id,
-                priority: ""
-              });
-            }
+            updated_tasks.push({
+              text: data.text,
+              checked: data.checked,
+              id: doc.id,
+              priority: ""
+            });
           });
-          setIncomplete(incomplete_tasks);
-          setComplete(complete_tasks);
+          setTask(updated_tasks);
         });
     }
     return unsubscribe;
-  }, [user, incomplete, complete]);
+  }, [user]);
 
   const handleSignOut = () => {
     auth
@@ -153,65 +141,73 @@ export function App(props) {
           <div>
             Incomplete Tasks
             <List>
-              {incomplete.map(value => {
-                const labelid = `checkbox-list-label-${value}`;
-                return (
-                  <ListItem key={value.id}>
-                    <ListItemIcon>
-                      <Checkbox
-                        checked={value.checked}
-                        onChange={(e, checked) => {
-                          handleCheckTask(checked, value.id);
-                        }}
-                        // checked={checked.indexOf(value) !== -1}
-                        inputProps={{ "aria-labelledby": labelid }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText id={labelid} primary={value.text} />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        onClick={() => {
-                          handleDeleteTask(value.id);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                );
-              })}
+              {tasks
+                .filter(incomplete => {
+                  return incomplete.checked === false;
+                })
+                .map(value => {
+                  const labelid = `checkbox-list-label-${value}`;
+                  return (
+                    <ListItem key={value.id}>
+                      <ListItemIcon>
+                        <Checkbox
+                          checked={value.checked}
+                          onChange={(e, checked) => {
+                            handleCheckTask(checked, value.id);
+                          }}
+                          // checked={checked.indexOf(value) !== -1}
+                          inputProps={{ "aria-labelledby": labelid }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText id={labelid} primary={value.text} />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          onClick={() => {
+                            handleDeleteTask(value.id);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  );
+                })}
             </List>
           </div>
           <div>
             Completed Tasks
             <List>
-              {complete.map(value => {
-                const labelid = `checkbox-list-label-${value}`;
-                return (
-                  <ListItem key={value.id}>
-                    <ListItemIcon>
-                      <Checkbox
-                        checked={value.checked}
-                        onChange={(e, checked) => {
-                          handleCheckTask(checked, value.id);
-                        }}
-                        // checked={checked.indexOf(value) !== -1}
-                        inputProps={{ "aria-labelledby": labelid }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText id={labelid} primary={value.text} />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        onClick={() => {
-                          handleDeleteTask(value.id);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                );
-              })}
+              {tasks
+                .filter(complete => {
+                  return complete.checked === true;
+                })
+                .map(value => {
+                  const labelid = `checkbox-list-label-${value}`;
+                  return (
+                    <ListItem key={value.id}>
+                      <ListItemIcon>
+                        <Checkbox
+                          checked={value.checked}
+                          onChange={(e, checked) => {
+                            handleCheckTask(checked, value.id);
+                          }}
+                          // checked={checked.indexOf(value) !== -1}
+                          inputProps={{ "aria-labelledby": labelid }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText id={labelid} primary={value.text} />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          onClick={() => {
+                            handleDeleteTask(value.id);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  );
+                })}
             </List>
           </div>
         </Paper>
